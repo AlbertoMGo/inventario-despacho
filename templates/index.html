@@ -39,26 +39,30 @@
       </tr>
     </thead>
     <tbody>
-{% for p in productos %}
-{% set total = p.sucursal_a + p.sucursal_b + p.sucursal_c %}
-{% set alerta = total < p.stock_minimo %}
-<tr class="{% if alerta %}table-danger{% endif %}">
-  <td>
-    {{ p.nombre }}
-    {% if alerta %}
-      <span class="badge bg-danger ms-2">⚠ Bajo stock</span>
-    {% endif %}
-  </td>
-  <td>{{ p.unidad }}</td>
-  <td>{{ p.stock_minimo }}</td>
-  <td>{{ p.ubicacion }}</td>
-  <td>{{ p.sucursal_a }}</td>
-  <td>{{ p.sucursal_b }}</td>
-  <td>{{ p.sucursal_c }}</td>
-</tr>
-{% endfor %}
+      {% for p in productos %}
+      {% set total = p.sucursal_a + p.sucursal_b + p.sucursal_c %}
+      {% set alerta = total < p.stock_minimo %}
+      <tr class="{% if alerta %}table-danger{% endif %}">
+        <td>
+          {{ p.nombre }}
+          {% if alerta %}
+            <span class="badge bg-danger ms-2">⚠ Bajo stock</span>
+          {% endif %}
+        </td>
+        <td>{{ p.unidad }}</td>
+        <td>{{ p.stock_minimo }}</td>
+        <td>{{ p.ubicacion }}</td>
+        <td>{{ p.sucursal_a }}</td>
+        <td>{{ p.sucursal_b }}</td>
+        <td>{{ p.sucursal_c }}</td>
+      </tr>
+      {% endfor %}
     </tbody>
   </table>
+
+  <div class="text-center mt-4">
+    <a href="/login" class="btn btn-outline-secondary">Editar inventario</a>
+  </div>
 
 </div>
 </body>
