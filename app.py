@@ -92,23 +92,32 @@ def editar():
             conn.execute("DELETE FROM productos WHERE id=?", (producto_id,))
             conn.commit()
 
-        elif accion == 'guardar':
-            producto_id = form['producto_id']
-            conn.execute("""
-                UPDATE productos
-                SET nombre=?, unidad=?, stock_minimo=?, ubicacion=?, sucursal_a=?, sucursal_b=?, sucursal_c=?
-                WHERE id=?
-            """, (
-                form['nombre'],
-                form['unidad'],
-                int(form['stock_minimo']),
-                form['ubicacion'],
-                int(form['a']),
-                int(form['b']),
-                int(form['c']),
-                producto_id
-            ))
-            conn.commit()
+elif accion == 'guardar_todos':
+    productos_actualizados = []
+    i = 0
+    while True:
+        producto_id = form.get(f'productos-{i}-id')
+        if not producto_id:
+            break  # termina el bucle si ya no hay más productos
+
+        productos_actualizados.append((
+            form.get(f'productos-{i}-nombre'),
+            form.get(f'productos-{i}-unidad'),
+            int(form.get(f'productos-{i}-stock_minimo') or 0),
+            form.get(f'productos-{i}-ubicacion'),
+            int(form.get(f'productos-{i}-a') or 0),
+            int(form.get(f'productos-{i}-b') or 0),
+            int(form.get(f'productos-{i}-c') or 0),
+            int(producto_id)
+        ))
+        i += 1
+
+    conn.executemany("""
+        UPDATE productos
+        SET nombre=?, unidad=?, stock_minimo=?, ubicacion=?, sucursal_a=?, sucursal_b=?, sucursal_c=?
+        WHERE id=?
+    """, productos_actualizados)
+    conn.commit()
 
         elif accion == 'agregar':
             conn.execute("""
