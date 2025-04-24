@@ -89,52 +89,57 @@
     <a class="btn btn-outline-success" href="{{ url_for('exportar_csv', buscar=request.args.get('buscar', ''), sucursal=request.args.get('sucursal', '')) }}">📤 Exportar a CSV</a>
   </div>
 
-  <h2 class="text-center mb-4">Inventario por producto y sucursal</h2>
-  <table class="table table-bordered table-hover text-center bg-white">
-    <thead class="table-dark">
-      <tr>
-        <th>Producto</th>
-        <th>Unidad</th>
-        <th>Stock Mín.</th>
-        <th>Ubicación</th>
-        <th>Sucursal A</th>
-        <th>Sucursal B</th>
-        <th>Sucursal C</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for p in productos %}
-      {% set total = p.sucursal_a + p.sucursal_b + p.sucursal_c %}
-      {% set alerta = total < p.stock_minimo %}
-      <tr class="{% if alerta %}table-danger{% endif %}">
-        <td>{{ p.nombre }}</td>
+<h2 class="text-center mb-4">Inventario por producto y sucursal</h2>
+<table class="table table-bordered table-hover text-center bg-white">
+  <thead class="table-dark">
+    <tr>
+      <th>Producto</th>
+      <th>Unidad</th>
+      <th>Stock Mín.</th>
+      <th>Ubicación</th>
+      <th>Sucursal A</th>
+      <th>Sucursal B</th>
+      <th>Sucursal C</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in productos %}
+    {% set total = p.sucursal_a + p.sucursal_b + p.sucursal_c %}
+    {% set alerta = total < p.stock_minimo %}
+    <tr class="{% if alerta %}table-danger{% endif %}">
+      <form method="POST">
+        <input type="hidden" name="accion" value="guardar">
+        <input type="hidden" name="producto_id" value="{{ p.id }}">
+
+        <td><input name="nombre" value="{{ p.nombre }}" class="form-control"></td>
+
         <td>
-          <select name="unidad" class="form-select form-select-sm text-center" disabled>
+          <select name="unidad" class="form-select form-select-sm text-center">
             <option value="piezas" {% if p.unidad == "piezas" %}selected{% endif %}>piezas</option>
             <option value="litros" {% if p.unidad == "litros" %}selected{% endif %}>litros</option>
             <option value="kilogramos" {% if p.unidad == "kilogramos" %}selected{% endif %}>kilogramos</option>
           </select>
         </td>
-        <td>{{ p.stock_minimo }}</td>
-        <td>{{ p.ubicacion }}</td>
-        <td>{{ p.sucursal_a }}</td>
-        <td>{{ p.sucursal_b }}</td>
-        <td>{{ p.sucursal_c }}</td>
+
+        <td><input name="stock_minimo" type="number" value="{{ p.stock_minimo }}" class="form-control text-center"></td>
+        <td><input name="ubicacion" value="{{ p.ubicacion }}" class="form-control text-center"></td>
+        <td><input name="a" type="number" value="{{ p.sucursal_a }}" class="form-control text-center"></td>
+        <td><input name="b" type="number" value="{{ p.sucursal_b }}" class="form-control text-center"></td>
+        <td><input name="c" type="number" value="{{ p.sucursal_c }}" class="form-control text-center"></td>
+
         <td>
           {% if alerta %}
             <span class="badge bg-danger mb-1">⚠ Bajo stock</span><br>
           {% endif %}
-          <form method="POST" style="display:inline;">
-            <input type="hidden" name="accion" value="eliminar">
-            <input type="hidden" name="producto_id" value="{{ p.id }}">
-            <button type="submit" class="btn btn-sm btn-danger">🗑️</button>
-          </form>
+          <button type="submit" class="btn btn-sm btn-success me-1">💾</button>
+          <button type="submit" class="btn btn-sm btn-danger" name="accion" value="eliminar">🗑️</button>
         </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </form>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
   <div class="text-center mt-4">
     <a href="/logout" class="btn btn-secondary">Cerrar sesión</a>
