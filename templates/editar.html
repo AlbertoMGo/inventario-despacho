@@ -1,3 +1,4 @@
+<!-- editar.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -11,10 +12,7 @@
   <h2 class="text-center mb-4">Agregar nuevo producto</h2>
   <form method="POST" class="row g-3 mb-4">
     <input type="hidden" name="accion" value="agregar">
-
-    <div class="col-md-3">
-      <input name="nombre" class="form-control" placeholder="Nombre del producto" required>
-    </div>
+    <div class="col-md-3"><input name="nombre" class="form-control" placeholder="Nombre del producto" required></div>
     <div class="col-md-2">
       <select name="unidad" class="form-select">
         <option value="piezas">piezas</option>
@@ -22,12 +20,8 @@
         <option value="kilogramos">kilogramos</option>
       </select>
     </div>
-    <div class="col-md-2">
-      <input name="stock_minimo" type="number" class="form-control" placeholder="Stock mínimo">
-    </div>
-    <div class="col-md-2">
-      <input name="ubicacion" class="form-control" placeholder="Ubicación">
-    </div>
+    <div class="col-md-2"><input name="stock_minimo" type="number" class="form-control" placeholder="Stock mínimo"></div>
+    <div class="col-md-2"><input name="ubicacion" class="form-control" placeholder="Ubicación"></div>
     <div class="col-md-3">
       <div class="row">
         <div class="col"><input name="a" type="number" class="form-control" value="0" placeholder="Sucursal A"></div>
@@ -40,98 +34,47 @@
 
   <hr>
 
-  {% if alertas %}
-    <h3 class="text-center mb-3 text-danger">⚠ Productos con bajo inventario</h3>
-    <table class="table table-sm table-bordered table-hover text-center bg-white mb-5">
-      <thead class="table-danger">
+  <form method="POST">
+    <input type="hidden" name="accion" value="guardar_todos">
+
+    <table class="table table-bordered table-hover text-center bg-white">
+      <thead class="table-dark">
         <tr>
           <th>Producto</th>
-          <th>Total</th>
-          <th>Stock mínimo</th>
           <th>Unidad</th>
+          <th>Stock Mín.</th>
           <th>Ubicación</th>
+          <th>Sucursal A</th>
+          <th>Sucursal B</th>
+          <th>Sucursal C</th>
         </tr>
       </thead>
       <tbody>
-        {% for p in alertas %}
+        {% for p in productos %}
         <tr>
-          <td>{{ p.nombre }}</td>
-          <td>{{ p.sucursal_a + p.sucursal_b + p.sucursal_c }}</td>
-          <td>{{ p.stock_minimo }}</td>
-          <td>{{ p.unidad }}</td>
-          <td>{{ p.ubicacion }}</td>
+          <input type="hidden" name="productos-{{ loop.index0 }}-id" value="{{ p.id }}">
+          <td><input name="productos-{{ loop.index0 }}-nombre" value="{{ p.nombre }}" class="form-control"></td>
+          <td>
+            <select name="productos-{{ loop.index0 }}-unidad" class="form-select form-select-sm text-center">
+              <option value="piezas" {% if p.unidad == "piezas" %}selected{% endif %}>piezas</option>
+              <option value="litros" {% if p.unidad == "litros" %}selected{% endif %}>litros</option>
+              <option value="kilogramos" {% if p.unidad == "kilogramos" %}selected{% endif %}>kilogramos</option>
+            </select>
+          </td>
+          <td><input name="productos-{{ loop.index0 }}-stock_minimo" type="number" value="{{ p.stock_minimo }}" class="form-control text-center"></td>
+          <td><input name="productos-{{ loop.index0 }}-ubicacion" value="{{ p.ubicacion }}" class="form-control text-center"></td>
+          <td><input name="productos-{{ loop.index0 }}-a" type="number" value="{{ p.sucursal_a }}" class="form-control text-center"></td>
+          <td><input name="productos-{{ loop.index0 }}-b" type="number" value="{{ p.sucursal_b }}" class="form-control text-center"></td>
+          <td><input name="productos-{{ loop.index0 }}-c" type="number" value="{{ p.sucursal_c }}" class="form-control text-center"></td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-  {% endif %}
 
-  <form method="GET" class="row mb-4 align-items-end">
-    <div class="col-md-6">
-      <label>Buscar por nombre:</label>
-      <input type="text" name="buscar" class="form-control" placeholder="Nombre del producto" value="{{ request.args.get('buscar', '') }}">
-    </div>
-    <div class="col-md-4">
-      <label>Filtrar por sucursal:</label>
-      <select name="sucursal" class="form-select">
-        <option value="">Todas</option>
-        <option value="a" {% if request.args.get('sucursal') == 'a' %}selected{% endif %}>Sucursal A</option>
-        <option value="b" {% if request.args.get('sucursal') == 'b' %}selected{% endif %}>Sucursal B</option>
-        <option value="c" {% if request.args.get('sucursal') == 'c' %}selected{% endif %}>Sucursal C</option>
-      </select>
-    </div>
-    <div class="col-md-2">
-      <button type="submit" class="btn btn-outline-primary w-100">Buscar</button>
+    <div class="text-center mt-3">
+      <button type="submit" class="btn btn-success px-4">💾 Guardar todos los cambios</button>
     </div>
   </form>
-
-  <div class="text-end mb-3">
-    <a class="btn btn-outline-success" href="{{ url_for('exportar_csv', buscar=request.args.get('buscar', ''), sucursal=request.args.get('sucursal', '')) }}">📤 Exportar a CSV</a>
-  </div>
-
-<h2 class="text-center mb-4">Inventario por producto y sucursal</h2>
-
-<form method="POST">
-  <input type="hidden" name="accion" value="guardar_todos">
-
-  <table class="table table-bordered table-hover text-center bg-white">
-    <thead class="table-dark">
-      <tr>
-        <th>Producto</th>
-        <th>Unidad</th>
-        <th>Stock Mín.</th>
-        <th>Ubicación</th>
-        <th>Sucursal A</th>
-        <th>Sucursal B</th>
-        <th>Sucursal C</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for p in productos %}
-      <tr>
-        <input type="hidden" name="productos-{{ loop.index0 }}-id" value="{{ p.id }}">
-        <td><input name="productos-{{ loop.index0 }}-nombre" value="{{ p.nombre }}" class="form-control"></td>
-        <td>
-          <select name="productos-{{ loop.index0 }}-unidad" class="form-select form-select-sm text-center">
-            <option value="piezas" {% if p.unidad == "piezas" %}selected{% endif %}>piezas</option>
-            <option value="litros" {% if p.unidad == "litros" %}selected{% endif %}>litros</option>
-            <option value="kilogramos" {% if p.unidad == "kilogramos" %}selected{% endif %}>kilogramos</option>
-          </select>
-        </td>
-        <td><input name="productos-{{ loop.index0 }}-stock_minimo" type="number" value="{{ p.stock_minimo }}" class="form-control text-center"></td>
-        <td><input name="productos-{{ loop.index0 }}-ubicacion" value="{{ p.ubicacion }}" class="form-control text-center"></td>
-        <td><input name="productos-{{ loop.index0 }}-a" type="number" value="{{ p.sucursal_a }}" class="form-control text-center"></td>
-        <td><input name="productos-{{ loop.index0 }}-b" type="number" value="{{ p.sucursal_b }}" class="form-control text-center"></td>
-        <td><input name="productos-{{ loop.index0 }}-c" type="number" value="{{ p.sucursal_c }}" class="form-control text-center"></td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <div class="text-center mt-3">
-    <button type="submit" class="btn btn-success px-4">💾 Guardar todos los cambios</button>
-  </div>
-</form>
 
   <div class="text-center mt-4">
     <a href="/logout" class="btn btn-secondary">Cerrar sesión</a>

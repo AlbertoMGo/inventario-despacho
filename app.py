@@ -1,3 +1,4 @@
+# app.py
 from flask import Flask, render_template, redirect, url_for, request, Response
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 import sqlite3, os
@@ -24,9 +25,8 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
-# Crear base de datos con campos adicionales si no existe
 if not os.path.exists("inventario.db"):
-    conn = sqlite3.connect("inventario.db")
+    conn = get_db()
     conn.execute("""
         CREATE TABLE productos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,17 +47,12 @@ if not os.path.exists("inventario.db"):
 def index():
     conn = get_db()
     productos = conn.execute("SELECT * FROM productos").fetchall()
-
-    # Filtros GET
     buscar = request.args.get('buscar', '').lower()
     ubicacion = request.args.get('ubicacion', '').lower()
-
-    # Aplicar filtros
     if buscar:
         productos = [p for p in productos if buscar in p["nombre"].lower()]
     if ubicacion:
         productos = [p for p in productos if ubicacion in (p["ubicacion"] or '').lower()]
-
     return render_template("index.html", productos=productos)
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -82,7 +77,6 @@ def logout():
 @login_required
 def editar():
     conn = get_db()
-
     if request.method == 'POST':
         form = request.form
         accion = form.get('accion')
@@ -91,33 +85,6 @@ def editar():
             producto_id = form['producto_id']
             conn.execute("DELETE FROM productos WHERE id=?", (producto_id,))
             conn.commit()
-
-elif accion == 'guardar_todos':
-    productos_actualizados = []
-    i = 0
-    while True:
-        producto_id = form.get(f'productos-{i}-id')
-        if not producto_id:
-            break  # termina el bucle si ya no hay más productos
-
-        productos_actualizados.append((
-            form.get(f'productos-{i}-nombre'),
-            form.get(f'productos-{i}-unidad'),
-            int(form.get(f'productos-{i}-stock_minimo') or 0),
-            form.get(f'productos-{i}-ubicacion'),
-            int(form.get(f'productos-{i}-a') or 0),
-            int(form.get(f'productos-{i}-b') or 0),
-            int(form.get(f'productos-{i}-c') or 0),
-            int(producto_id)
-        ))
-        i += 1
-
-    conn.executemany("""
-        UPDATE productos
-        SET nombre=?, unidad=?, stock_minimo=?, ubicacion=?, sucursal_a=?, sucursal_b=?, sucursal_c=?
-        WHERE id=?
-    """, productos_actualizados)
-    conn.commit()
 
         elif accion == 'agregar':
             conn.execute("""
@@ -134,22 +101,34 @@ elif accion == 'guardar_todos':
             ))
             conn.commit()
 
+        elif accion == 'guardar_todos':
+            productos_actualizados = []
+            i = 0
+            while True:
+                producto_id = form.get(f'productos-{i}-id')
+                if not producto_id:
+                    break
+                productos_actualizados.append((
+                    form.get(f'productos-{i}-nombre'),
+                    form.get(f'productos-{i}-unidad'),
+                    int(form.get(f'productos-{i}-stock_minimo') or 0),
+                    form.get(f'productos-{i}-ubicacion'),
+                    int(form.get(f'productos-{i}-a') or 0),
+                    int(form.get(f'productos-{i}-b') or 0),
+                    int(form.get(f'productos-{i}-c') or 0),
+                    int(producto_id)
+                ))
+                i += 1
+
+            conn.executemany("""
+                UPDATE productos
+                SET nombre=?, unidad=?, stock_minimo=?, ubicacion=?, sucursal_a=?, sucursal_b=?, sucursal_c=?
+                WHERE id=?
+            """, productos_actualizados)
+            conn.commit()
+
     productos = conn.execute("SELECT * FROM productos").fetchall()
-
-    buscar = request.args.get('buscar', '').lower()
-    sucursal = request.args.get('sucursal', '').lower()
-
-    if buscar:
-        productos = [p for p in productos if buscar in p["nombre"].lower()]
-    if sucursal == 'a':
-        productos = [p for p in productos if p["sucursal_a"] > 0]
-    elif sucursal == 'b':
-        productos = [p for p in productos if p["sucursal_b"] > 0]
-    elif sucursal == 'c':
-        productos = [p for p in productos if p["sucursal_c"] > 0]
-
     alertas = [p for p in productos if p["sucursal_a"] + p["sucursal_b"] + p["sucursal_c"] < p["stock_minimo"]]
-
     return render_template("editar.html", productos=productos, alertas=alertas)
 
 @app.route('/exportar_csv')
@@ -157,8 +136,6 @@ elif accion == 'guardar_todos':
 def exportar_csv():
     conn = get_db()
     productos = conn.execute("SELECT * FROM productos").fetchall()
-
-    # Aplicar filtros como en /editar
     buscar = request.args.get('buscar', '').lower()
     sucursal = request.args.get('sucursal', '').lower()
 
@@ -171,7 +148,6 @@ def exportar_csv():
     elif sucursal == 'c':
         productos = [p for p in productos if p["sucursal_c"] > 0]
 
-    # Crear CSV en memoria
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(['ID', 'Nombre', 'Unidad', 'Stock Mínimo', 'Ubicación', 'Sucursal A', 'Sucursal B', 'Sucursal C'])

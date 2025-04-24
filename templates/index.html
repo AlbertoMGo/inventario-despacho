@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -45,9 +46,7 @@
       <tr class="{% if alerta %}table-danger{% endif %}">
         <td>
           {{ p.nombre }}
-          {% if alerta %}
-            <span class="badge bg-danger ms-2">⚠ Bajo stock</span>
-          {% endif %}
+          {% if alerta %}<span class="badge bg-danger ms-2">⚠ Bajo stock</span>{% endif %}
         </td>
         <td>{{ p.unidad }}</td>
         <td>{{ p.stock_minimo }}</td>
