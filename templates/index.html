@@ -2,39 +2,64 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Inventario Clínico</title>
+  <title>Inventario Público</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-  <div class="container py-4">
+<div class="container py-4">
 
-    <h1 class="text-center mb-4">Inventario de Sucursales</h1>
+  <h2 class="text-center mb-4">Inventario de la Clínica</h2>
 
-    <table class="table table-bordered table-hover text-center bg-white">
-      <thead class="table-dark">
-        <tr>
-          <th>Producto</th>
-          <th>Sucursal A</th>
-          <th>Sucursal B</th>
-          <th>Sucursal C</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in productos %}
-        <tr>
-          <td>{{ p.nombre }}</td>
-          <td>{{ p.sucursal_a }}</td>
-          <td>{{ p.sucursal_b }}</td>
-          <td>{{ p.sucursal_c }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <div class="text-center mt-4">
-      <a href="/login" class="btn btn-primary">Iniciar sesión para editar inventario</a>
+  <!-- Formulario de búsqueda y filtro -->
+  <form method="GET" class="row mb-4 align-items-end">
+    <div class="col-md-6">
+      <label>Buscar por nombre:</label>
+      <input type="text" name="buscar" class="form-control" placeholder="Nombre del producto" value="{{ request.args.get('buscar', '') }}">
     </div>
+    <div class="col-md-4">
+      <label>Filtrar por ubicación:</label>
+      <input type="text" name="ubicacion" class="form-control" placeholder="Ubicación" value="{{ request.args.get('ubicacion', '') }}">
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-outline-primary w-100">Filtrar</button>
+    </div>
+  </form>
 
-  </div>
+  <!-- Tabla del inventario -->
+  <table class="table table-bordered table-hover text-center bg-white">
+    <thead class="table-dark">
+      <tr>
+        <th>Producto</th>
+        <th>Unidad</th>
+        <th>Stock Mín.</th>
+        <th>Ubicación</th>
+        <th>Sucursal A</th>
+        <th>Sucursal B</th>
+        <th>Sucursal C</th>
+      </tr>
+    </thead>
+    <tbody>
+{% for p in productos %}
+{% set total = p.sucursal_a + p.sucursal_b + p.sucursal_c %}
+{% set alerta = total < p.stock_minimo %}
+<tr class="{% if alerta %}table-danger{% endif %}">
+  <td>
+    {{ p.nombre }}
+    {% if alerta %}
+      <span class="badge bg-danger ms-2">⚠ Bajo stock</span>
+    {% endif %}
+  </td>
+  <td>{{ p.unidad }}</td>
+  <td>{{ p.stock_minimo }}</td>
+  <td>{{ p.ubicacion }}</td>
+  <td>{{ p.sucursal_a }}</td>
+  <td>{{ p.sucursal_b }}</td>
+  <td>{{ p.sucursal_c }}</td>
+</tr>
+{% endfor %}
+    </tbody>
+  </table>
+
+</div>
 </body>
 </html>

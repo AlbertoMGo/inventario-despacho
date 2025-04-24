@@ -47,6 +47,17 @@ if not os.path.exists("inventario.db"):
 def index():
     conn = get_db()
     productos = conn.execute("SELECT * FROM productos").fetchall()
+
+    # Filtros GET
+    buscar = request.args.get('buscar', '').lower()
+    ubicacion = request.args.get('ubicacion', '').lower()
+
+    # Aplicar filtros
+    if buscar:
+        productos = [p for p in productos if buscar in p["nombre"].lower()]
+    if ubicacion:
+        productos = [p for p in productos if ubicacion in (p["ubicacion"] or '').lower()]
+
     return render_template("index.html", productos=productos)
 
 @app.route('/login', methods=['GET', 'POST'])
