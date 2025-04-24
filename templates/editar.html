@@ -8,30 +8,6 @@
 <body class="bg-light">
 <div class="container py-4">
 
-<form method="GET" class="row mb-4 align-items-end">
-  <div class="col-md-6">
-    <label>Buscar por nombre:</label>
-    <input type="text" name="buscar" class="form-control" placeholder="Nombre del producto" value="{{ request.args.get('buscar', '') }}">
-  </div>
-  <div class="col-md-4">
-    <label>Filtrar por sucursal:</label>
-    <select name="sucursal" class="form-select">
-      <option value="">Todas</option>
-      <option value="a" {% if request.args.get('sucursal') == 'a' %}selected{% endif %}>Sucursal A</option>
-      <option value="b" {% if request.args.get('sucursal') == 'b' %}selected{% endif %}>Sucursal B</option>
-      <option value="c" {% if request.args.get('sucursal') == 'c' %}selected{% endif %}>Sucursal C</option>
-    </select>
-  </div>
-  <div class="col-md-2">
-    <button type="submit" class="btn btn-outline-primary w-100">Buscar</button>
-  </div>
-</form>
-
-<div class="text-end mb-3">
-  <a class="btn btn-outline-success" href="{{ url_for('exportar_csv', buscar=request.args.get('buscar', ''), sucursal=request.args.get('sucursal', '')) }}">📤 Exportar a CSV</a>
-</div>
-
-
   <h2 class="text-center mb-4">Agregar nuevo producto</h2>
   <form method="POST" class="row g-3 mb-4">
     <input type="hidden" name="accion" value="agregar">
@@ -40,7 +16,11 @@
       <input name="nombre" class="form-control" placeholder="Nombre del producto" required>
     </div>
     <div class="col-md-2">
-      <input name="unidad" class="form-control" placeholder="Unidad (piezas, litros)">
+      <select name="unidad" class="form-select">
+        <option value="piezas">piezas</option>
+        <option value="litros">litros</option>
+        <option value="kilogramos">kilogramos</option>
+      </select>
     </div>
     <div class="col-md-2">
       <input name="stock_minimo" type="number" class="form-control" placeholder="Stock mínimo">
@@ -59,89 +39,102 @@
   </form>
 
   <hr>
-{% if alertas %}
-  <h3 class="text-center mb-3 text-danger">⚠ Productos con bajo inventario</h3>
-  <table class="table table-sm table-bordered table-hover text-center bg-white mb-5">
-    <thead class="table-danger">
+
+  {% if alertas %}
+    <h3 class="text-center mb-3 text-danger">⚠ Productos con bajo inventario</h3>
+    <table class="table table-sm table-bordered table-hover text-center bg-white mb-5">
+      <thead class="table-danger">
+        <tr>
+          <th>Producto</th>
+          <th>Total</th>
+          <th>Stock mínimo</th>
+          <th>Unidad</th>
+          <th>Ubicación</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in alertas %}
+        <tr>
+          <td>{{ p.nombre }}</td>
+          <td>{{ p.sucursal_a + p.sucursal_b + p.sucursal_c }}</td>
+          <td>{{ p.stock_minimo }}</td>
+          <td>{{ p.unidad }}</td>
+          <td>{{ p.ubicacion }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <form method="GET" class="row mb-4 align-items-end">
+    <div class="col-md-6">
+      <label>Buscar por nombre:</label>
+      <input type="text" name="buscar" class="form-control" placeholder="Nombre del producto" value="{{ request.args.get('buscar', '') }}">
+    </div>
+    <div class="col-md-4">
+      <label>Filtrar por sucursal:</label>
+      <select name="sucursal" class="form-select">
+        <option value="">Todas</option>
+        <option value="a" {% if request.args.get('sucursal') == 'a' %}selected{% endif %}>Sucursal A</option>
+        <option value="b" {% if request.args.get('sucursal') == 'b' %}selected{% endif %}>Sucursal B</option>
+        <option value="c" {% if request.args.get('sucursal') == 'c' %}selected{% endif %}>Sucursal C</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-outline-primary w-100">Buscar</button>
+    </div>
+  </form>
+
+  <div class="text-end mb-3">
+    <a class="btn btn-outline-success" href="{{ url_for('exportar_csv', buscar=request.args.get('buscar', ''), sucursal=request.args.get('sucursal', '')) }}">📤 Exportar a CSV</a>
+  </div>
+
+  <h2 class="text-center mb-4">Inventario por producto y sucursal</h2>
+  <table class="table table-bordered table-hover text-center bg-white">
+    <thead class="table-dark">
       <tr>
         <th>Producto</th>
-        <th>Total</th>
-        <th>Stock mínimo</th>
         <th>Unidad</th>
+        <th>Stock Mín.</th>
         <th>Ubicación</th>
+        <th>Sucursal A</th>
+        <th>Sucursal B</th>
+        <th>Sucursal C</th>
+        <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
-      {% for p in alertas %}
-      <tr>
+      {% for p in productos %}
+      {% set total = p.sucursal_a + p.sucursal_b + p.sucursal_c %}
+      {% set alerta = total < p.stock_minimo %}
+      <tr class="{% if alerta %}table-danger{% endif %}">
         <td>{{ p.nombre }}</td>
-        <td>{{ p.sucursal_a + p.sucursal_b + p.sucursal_c }}</td>
+        <td>
+          <select name="unidad" class="form-select form-select-sm text-center" disabled>
+            <option value="piezas" {% if p.unidad == "piezas" %}selected{% endif %}>piezas</option>
+            <option value="litros" {% if p.unidad == "litros" %}selected{% endif %}>litros</option>
+            <option value="kilogramos" {% if p.unidad == "kilogramos" %}selected{% endif %}>kilogramos</option>
+          </select>
+        </td>
         <td>{{ p.stock_minimo }}</td>
-        <td>{{ p.unidad }}</td>
         <td>{{ p.ubicacion }}</td>
+        <td>{{ p.sucursal_a }}</td>
+        <td>{{ p.sucursal_b }}</td>
+        <td>{{ p.sucursal_c }}</td>
+        <td>
+          {% if alerta %}
+            <span class="badge bg-danger mb-1">⚠ Bajo stock</span><br>
+          {% endif %}
+          <form method="POST" style="display:inline;">
+            <input type="hidden" name="accion" value="eliminar">
+            <input type="hidden" name="producto_id" value="{{ p.id }}">
+            <button type="submit" class="btn btn-sm btn-danger">🗑️</button>
+          </form>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
-{% endif %}
-
-<h2 class="text-center mb-4">Inventario por producto y sucursal</h2>
-<table class="table table-bordered table-hover text-center bg-white">
-  <thead class="table-dark">
-    <tr>
-      <th>Producto</th>
-      <th>Unidad</th>
-      <th>Stock Mín.</th>
-      <th>Ubicación</th>
-      <th>Sucursal A</th>
-      <th>Sucursal B</th>
-      <th>Sucursal C</th>
-      <th>Acciones</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for p in productos %}
-    {% set total = p.sucursal_a + p.sucursal_b + p.sucursal_c %}
-    {% set alerta = total < p.stock_minimo %}
-    <tr class="{% if alerta %}table-danger{% endif %}">
-      <td><input name="nombre" value="{{ p.nombre }}" class="form-control" readonly></td>
-      <td><input name="unidad" value="{{ p.unidad }}" class="form-control text-center" readonly></td>
-      <td><input name="stock_minimo" type="number" value="{{ p.stock_minimo }}" class="form-control text-center" readonly></td>
-      <td><input name="ubicacion" value="{{ p.ubicacion }}" class="form-control text-center" readonly></td>
-      <td><input name="a" type="number" value="{{ p.sucursal_a }}" class="form-control text-center" readonly></td>
-      <td><input name="b" type="number" value="{{ p.sucursal_b }}" class="form-control text-center" readonly></td>
-      <td><input name="c" type="number" value="{{ p.sucursal_c }}" class="form-control text-center" readonly></td>
-
-      <td>
-        {% if alerta %}
-          <span class="badge bg-danger mb-1">⚠ Bajo stock</span><br>
-        {% endif %}
-
-        <!-- Formulario para guardar -->
-        <form method="POST" style="display: inline;">
-          <input type="hidden" name="accion" value="guardar">
-          <input type="hidden" name="producto_id" value="{{ p.id }}">
-          <input type="hidden" name="nombre" value="{{ p.nombre }}">
-          <input type="hidden" name="unidad" value="{{ p.unidad }}">
-          <input type="hidden" name="stock_minimo" value="{{ p.stock_minimo }}">
-          <input type="hidden" name="ubicacion" value="{{ p.ubicacion }}">
-          <input type="hidden" name="a" value="{{ p.sucursal_a }}">
-          <input type="hidden" name="b" value="{{ p.sucursal_b }}">
-          <input type="hidden" name="c" value="{{ p.sucursal_c }}">
-          <button type="submit" class="btn btn-sm btn-success me-1">💾</button>
-        </form>
-
-        <!-- Formulario para eliminar -->
-        <form method="POST" style="display: inline;">
-          <input type="hidden" name="accion" value="eliminar">
-          <input type="hidden" name="producto_id" value="{{ p.id }}">
-          <button type="submit" class="btn btn-sm btn-danger">🗑️</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
 
   <div class="text-center mt-4">
     <a href="/logout" class="btn btn-secondary">Cerrar sesión</a>
