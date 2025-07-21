@@ -1,9 +1,8 @@
-# app.py
-from flask import Flask, render_template, redirect, url_for, request, Response
+from flask import Flask, render_template, redirect, url_for, request, Response, send_file
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
-import sqlite3, os
-import csv
-import io
+import sqlite3, os, csv, io
+import pandas as pd
+from io import BytesIO
 
 app = Flask(__name__)
 app.secret_key = 'inventario-secreto'
@@ -162,6 +161,41 @@ def exportar_csv():
     return Response(output, mimetype='text/csv', headers={
         "Content-Disposition": "attachment; filename=inventario.csv"
     })
+
+@app.route('/exportar-excel')
+def exportar_excel():
+    conn = get_db()
+    productos = conn.execute("SELECT * FROM productos").fetchall()
+
+    # Aplicar mismos filtros que en la página pública
+    buscar = request.args.get('buscar', '').lower()
+    ubicacion = request.args.get('ubicacion', '').lower()
+
+    if buscar:
+        productos = [p for p in productos if buscar in p["nombre"].lower()]
+    if ubicacion:
+        productos = [p for p in productos if ubicacion in (p["ubicacion"] or '').lower()]
+
+    # Crear DataFrame
+    data = [{
+        'Producto': p['nombre'],
+        'Unidad': p['unidad'],
+        'Stock mínimo': p['stock_minimo'],
+        'Ubicación': p['ubicacion'],
+        'Sucursal A': p['sucursal_a'],
+        'Sucursal B': p['sucursal_b'],
+        'Sucursal C': p['sucursal_c']
+    } for p in productos]
+
+    df = pd.DataFrame(data)
+
+    # Generar archivo Excel en memoria
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Inventario')
+    output.seek(0)
+
+    return send_file(output, download_name="inventario.xlsx", as_attachment=True)
 
 if __name__ == "__main__":
     app.run(debug=True)
